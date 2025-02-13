@@ -10,6 +10,12 @@ interface FileUploadProps {
   onFolderUpload: (files: { path: string; content: string }[]) => void
 }
 
+// Add custom type for input element with directory attributes
+interface HTMLInputElementWithDirectory extends HTMLInputElement {
+  webkitdirectory: boolean;
+  directory: boolean;
+}
+
 export function FileUpload({ onFileUpload, onFolderUpload }: FileUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -41,7 +47,7 @@ export function FileUpload({ onFileUpload, onFolderUpload }: FileUploadProps) {
     }
   }
 
-  const handleFolderChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFolderChange = async (event: React.ChangeEvent<HTMLInputElementWithDirectory>) => {
     const files = event.target.files
     if (!files || files.length === 0) return
 
@@ -98,11 +104,10 @@ export function FileUpload({ onFileUpload, onFolderUpload }: FileUploadProps) {
 
       <input
         type="file"
-        onChange={handleFolderChange}
+        onChange={handleFolderChange as any}
         className="hidden"
         id="folder-upload"
-        webkitdirectory=""
-        directory=""
+        {...{ webkitdirectory: "", directory: "" } as any}
       />
       <label htmlFor="folder-upload">
         <Button
