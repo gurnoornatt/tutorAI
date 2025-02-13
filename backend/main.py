@@ -5,13 +5,16 @@ import os
 import shutil
 from pydantic import BaseModel
 from dotenv import load_dotenv, find_dotenv
-import openai
+from openai import OpenAI
 import mimetypes
 
 # Load environment variables with debug info
 env_path = find_dotenv()
 print(f"Loading .env from: {env_path}")
 load_dotenv(env_path)
+
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Debug: Print API key prefix (safely)
 api_key = os.getenv("OPENAI_API_KEY", "")
@@ -27,18 +30,16 @@ app = FastAPI()
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Add your frontend URL
+    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Create uploads directory if it doesn't exist
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# Initialize OpenAI client
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Constants for security
 MAX_FILE_SIZE_MB = 5
@@ -184,11 +185,14 @@ async def upload_files(files: List[UploadFile]):
 @app.post("/feedback")
 async def get_feedback(request: FeedbackRequest):
     try:
-        if not openai.api_key:
+        if not client.api_key:
+            print("OpenAI API key not found")
             raise HTTPException(
                 status_code=500,
                 detail="OpenAI API key not configured"
             )
+
+        print(f"Making request to OpenAI with API key prefix: {client.api_key[:7]}...")
 
         # Enhanced system prompt for better tutoring
         system_prompt = """You are an AI teaching assistant focused on helping students learn and improve their coding skills. Your role is to:
@@ -232,7 +236,8 @@ async def get_feedback(request: FeedbackRequest):
         """
 
         try:
-            response = openai.ChatCompletion.create(
+            print("Creating chat completion...")
+            response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -241,6 +246,7 @@ async def get_feedback(request: FeedbackRequest):
                 temperature=0.7,
                 max_tokens=1000
             )
+            print("Chat completion successful")
 
             return {
                 "status": "success",
@@ -248,7 +254,9 @@ async def get_feedback(request: FeedbackRequest):
             }
 
         except Exception as e:
-            print(f"Error calling OpenAI API: {e}")
+            print(f"Error calling OpenAI API: {str(e)}")
+            print(f"Error type: {type(e)}")
+            print(f"Error details: {e.__dict__ if hasattr(e, '__dict__') else 'No details available'}")
             raise HTTPException(
                 status_code=500,
                 detail=f"OpenAI API error: {str(e)}"
@@ -257,6 +265,8 @@ async def get_feedback(request: FeedbackRequest):
     except HTTPException as he:
         raise he
     except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        print(f"Error type: {type(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

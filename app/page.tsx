@@ -1,101 +1,136 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import { useState, useRef } from "react"
+import { FileExplorer } from "./components/file-explorer"
+import { FileViewer } from "./components/file-viewer"
+import { Chat } from "./components/chat"
+import { Resources } from "./components/resources"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
+
+export default function CodeTutor() {
+  const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  const [fileContent, setFileContent] = useState<string>("")
+  const [isCodePanelOpen, setIsCodePanelOpen] = useState(true)
+  const [rubric, setRubric] = useState("")
+  const [messages, setMessages] = useState<Array<{ type: 'user' | 'ai'; content: string }>>([
+    {
+      type: 'ai',
+      content: "Hello! I'm your AI tutor. I can help you understand and improve your code. Select a file to get started!"
+    }
+  ])
+  const fileExplorerRef = useRef<{ addFilesToStructure: (files: { path: string; content: string }[]) => void }>(null)
+
+  const handleFileSelect = (path: string, content: string) => {
+    setSelectedFile(path)
+    setFileContent(content)
+  }
+
+  const handleContentChange = (newContent: string) => {
+    setFileContent(newContent)
+  }
+
+  const handleFolderUpload = (files: { path: string; content: string }[]) => {
+    if (fileExplorerRef.current) {
+      fileExplorerRef.current.addFilesToStructure(files)
+    }
+  }
+
+  const handleMessagesUpdate = (newMessages: Array<{ type: 'user' | 'ai'; content: string }>) => {
+    setMessages(newMessages)
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="flex h-screen bg-black text-white">
+      {/* File Explorer */}
+      <div
+        className={`${
+          isCodePanelOpen ? "w-72" : "w-0"
+        } border-r border-zinc-800 transition-all duration-300 overflow-hidden`}
+      >
+        <div className="flex items-center justify-between p-3 border-b border-zinc-800">
+          <span className="font-medium text-sm">Explorer</span>
+          <Button variant="ghost" size="sm" className="h-6 w-6" onClick={() => setIsCodePanelOpen(!isCodePanelOpen)}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <FileExplorer ref={fileExplorerRef} onFileSelect={handleFileSelect} />
+      </div>
+
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col">
+        {!isCodePanelOpen && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute left-0 top-3 m-2 h-6 w-6"
+            onClick={() => setIsCodePanelOpen(true)}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        )}
+
+        <ResizablePanelGroup direction="vertical">
+          {/* Chat and Resources */}
+          <ResizablePanel defaultSize={100}>
+            <div className="h-full border-t border-zinc-800">
+              <Tabs defaultValue="chat" className="h-full">
+                <TabsList className="h-10 w-full justify-start gap-4 border-b border-zinc-800 bg-black px-4">
+                  <TabsTrigger value="chat" className="data-[state=active]:bg-zinc-800">
+                    Chat
+                  </TabsTrigger>
+                  <TabsTrigger value="resources" className="data-[state=active]:bg-zinc-800">
+                    Resources
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="chat" className="h-[calc(100%-2.5rem)]">
+                  <div className="flex h-full">
+                    <ResizablePanelGroup direction="horizontal">
+                      <ResizablePanel defaultSize={70} minSize={30}>
+                        <div className="h-full overflow-auto">
+                          {selectedFile ? (
+                            <FileViewer
+                              filename={selectedFile}
+                              content={fileContent}
+                              onContentChange={handleContentChange}
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-full text-zinc-500">
+                              Select a file to view its contents
+                            </div>
+                          )}
+                        </div>
+                      </ResizablePanel>
+                      <ResizablePanel defaultSize={30} minSize={20}>
+                        <Chat 
+                          onFileSelect={handleFileSelect} 
+                          selectedFile={selectedFile || undefined}
+                          selectedContent={fileContent}
+                          onFolderUpload={handleFolderUpload}
+                          messages={messages}
+                          onMessagesUpdate={handleMessagesUpdate}
+                          rubric={rubric}
+                          onRubricChange={setRubric}
+                        />
+                      </ResizablePanel>
+                    </ResizablePanelGroup>
+                  </div>
+                </TabsContent>
+                <TabsContent value="resources" className="h-[calc(100%-2.5rem)]">
+                  <Resources 
+                    selectedFile={selectedFile || undefined}
+                    rubric={rubric}
+                    messages={messages}
+                  />
+                </TabsContent>
+              </Tabs>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
     </div>
-  );
+  )
 }
+
